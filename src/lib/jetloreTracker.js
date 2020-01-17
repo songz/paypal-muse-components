@@ -239,6 +239,11 @@ Tracker.prototype.page_view = function page_view() {
 Tracker.prototype.performAction = function performAction(convertData, action, data) {
   const tracker = this;
   if (data) {
+    const { merchantProvidedUserId, userId } = getUserId() || {};
+    if (merchantProvidedUserId || userId) {
+      data.id = merchantProvidedUserId || userId;
+    }
+
     // ignore if data is undefined or null
     if (data.constructor === Array) {
       tracker.action(convertData, action, data);

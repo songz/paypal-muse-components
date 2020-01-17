@@ -3,6 +3,8 @@ import constants from '../constants';
 import generate from '../generate-id';
 import { logger } from '../logger';
 
+import { getIdentity } from './identity';
+
 const { storage } = constants;
 
 export const getUserStorage = () => {
@@ -48,8 +50,14 @@ export const setMerchantProvidedUserId = (id : string) => {
 
 /* Returns a userId if one exists */
 export const getUserId = () => {
-  const storedValue = window.localStorage.getItem(storage.paypalCrUser);
+  const ppIdentity = getIdentity();
+  if (ppIdentity && ppIdentity.encryptedAccountNumber) {
+    return {
+      userId: ppIdentity.encryptedAccountNumber
+    };
+  }
 
+  const storedValue = window.localStorage.getItem(storage.paypalCrUser);
   if (storedValue) {
     return JSON.parse(storedValue);
   }

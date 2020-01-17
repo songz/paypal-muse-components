@@ -5,7 +5,7 @@ import { setIdentity, getIdentity } from '../local-storage';
 import { getDeviceInfo } from '../get-device-info';
 import { logger } from '../logger';
 
-export const IdentityManager = async () => {
+export const setupUserIdentity = () => {
   /* Do not fetch if identity data
     has recently be cached. */
   const cachedIdentity = getIdentity();

@@ -7,7 +7,7 @@ import { getCurrency } from '@paypal/sdk-client/src';
 import { fetchContainerSettings } from './lib/get-property-id';
 import constants from './lib/constants';
 import getJetlore from './lib/jetlore';
-import { IdentityManager } from './lib/iframe-tools/identity-manager';
+import { setupUserIdentity } from './lib/iframe-tools/identity-manager';
 import type {
   Config
 } from './types';
@@ -63,7 +63,7 @@ export const createConfigManager = (config? : Config) : any => {
     let userId;
 
     try {
-      new IdentityManager(configStore);
+      setupUserIdentity(configStore);
       getOrCreateValidCartId();
       userId = getOrCreateValidUserId().userId;
 

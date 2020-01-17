@@ -1,66 +1,60 @@
 /* @flow */
+import get from 'lodash/get';
+
 import { setIdentity, getIdentity } from '../local-storage';
 import { getDeviceInfo } from '../get-device-info';
 import { logger } from '../logger';
 
-import { IframeManager } from './iframe-manager';
-
-export class IdentityManager extends IframeManager {
-  constructor(config) {
-    let iframeUrl;
-    
-    if (config.paramsToIdentityUrl) {
-      iframeUrl = config.paramsToIdentityUrl();
-    } else {
-      iframeUrl = 'https://www.paypal.com/muse/identity/index.html';
-    }
-
-    super({ src: iframeUrl });
-
-    this.addMessageListener(this.storeIdentity);
-    this.addMessageListener(this.logIframeError);
-  }
-
-  onIframeLoad = () => {
-    this.fetchIdentity();
-  }
-
-  logIframeError = (e) => {
-    if (e.data.type !== 'fetch_identity_error') {
-      return;
-    }
-
-    logger.error('identity iframe error:', e.data.payload);
-  }
-
-  storeIdentity = (e) => {
-    if (e.data.type !== 'fetch_identity_response') {
-      return;
-    }
-
-    const identity = e.data.payload;
-
-    setIdentity(identity);
-  }
-
-  fetchIdentity = () => {
-    const cachedIdentity = getIdentity();
-
-    /* Do not fetch if identity data
+export const IdentityManager = async () => {
+  /* Do not fetch if identity data
     has recently be cached. */
-    if (cachedIdentity) {
+  const cachedIdentity = getIdentity();
+  if (cachedIdentity) {
+    return;
+  }
+
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.setAttribute('src', 'https://www.paypalobjects.com/ppshopping/9ac/964d282/9ac/964d282b/index.html');
+  document.body.appendChild(iframe);
+
+  window.addEventListener('message', (e) => {
+    if (e.source.window !== iframe.contentWindow) {
+      return;
+    }
+    if (e.data.type === 'fetch_identity_error') {
+      return logger.error('identity iframe error:', e.data.payload);
+    }
+
+    const confidence = get(e, 'data.payload.confidenceScore', 0);
+    if (parseInt(confidence, 10) !== 100) {
       return;
     }
 
+    setIdentity(get(e, 'data.payload'));
+  });
+
+  // For future developers: QA did not work
+  /*
+ * Add ability to configure targeting url
+  if (config.paramsToIdentityUrl) {
+    iframeUrl = config.paramsToIdentityUrl();
+ *
+*/
+  const queryHost = `https://www.sandbox.paypal.com`;
+
+  iframe.addEventListener('load', () => {
     const deviceInfo = getDeviceInfo();
     const country = 'US';
 
-    this.iframe.contentWindow.postMessage({
+    iframe.contentWindow.postMessage({
       type: 'fetch_identity_request',
       payload: {
         deviceInfo,
-        country
+        country,
+        queryHost
       }
-    }, this.url.origin);
-  }
-}
+    }, 'https://www.paypalobjects.com');
+  });
+};
+

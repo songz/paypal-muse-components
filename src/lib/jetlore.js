@@ -24,10 +24,13 @@ function addJLFunctionsToSDK(tracker = {}) : null {
   //   Since tracking SDK don't support these functions, they should
   //   be handled directly by JL instead of going through trackers (more error prone)
   try {
+    tracker.search = validFn((data : {}) : null => {
+      JL.trackActivity('search', { payload: data });
+    });
     tracker.viewSection = validFn((data : {}) : null => {
       JL.trackActivity('viewSection', { payload: data });
     });
-    tracker.viewPromotion = validFn((data : {}) : null => {
+    tracker.viewPromo = validFn((data : {}) : null => {
       JL.trackActivity('viewPromotion', { payload: data });
     });
     tracker.viewProduct = validFn((data : {}) : null => {
@@ -145,7 +148,7 @@ const initializeJL = (config = {}) => {
           return JL.tracker.browse_section && JL.tracker.browse_section(jlData);
         }
         if (type === 'viewProduct') {
-          return JL.tracker.browse_catalog && JL.tracker.browse_catalog(jlData);
+          return JL.tracker.browse_product && JL.tracker.browse_product(jlData);
         }
         if (type === 'setCart') {
           return JL.tracker.setCart && JL.tracker.setCart(data);

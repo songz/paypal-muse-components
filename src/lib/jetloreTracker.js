@@ -218,6 +218,12 @@ Tracker.prototype.browse_catalog = function browse_catalog(data) {
   tracker.performAction(tracker.convertTextData, tracker.a_browse_catalog, data);
 };
 
+Tracker.prototype.browse_product = function browse_product(data) {
+  const tracker = this;
+  tracker.log('BrowseProduct action initiated');
+  tracker.performAction(tracker.convertTextData, tracker.a_browse_product, data);
+};
+
 Tracker.prototype.browse_section = function browse_section(data) {
   const tracker = this;
   tracker.log('BrowseSection action initiated');
@@ -410,6 +416,7 @@ Tracker.prototype.a_remove_from_favorites = 'remove_from_favorites';
 Tracker.prototype.a_set_favorites = 'set_favorites';
 Tracker.prototype.a_browse_promo = 'browse_promo';
 Tracker.prototype.a_browse_catalog = 'browse_catalog';
+Tracker.prototype.a_browse_product = 'browse_product';
 Tracker.prototype.a_browse_section = 'browse_section';
 Tracker.prototype.api_url = 'https://api.jetlore.com/track.png';
 Tracker.prototype.a_search = 'search';

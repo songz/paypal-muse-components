@@ -28,13 +28,13 @@ function addJLFunctionsToSDK(tracker = {}) : null {
       JL.trackActivity('search', { payload: data });
     });
     tracker.viewSection = validFn((data : {}) : null => {
-      JL.trackActivity('viewSection', { payload: data });
+      JL.trackActivity('browse_section', { payload: data });
     });
     tracker.viewPromo = validFn((data : {}) : null => {
-      JL.trackActivity('viewPromotion', { payload: data });
+      JL.trackActivity('browse_promo', { payload: data });
     });
     tracker.viewProduct = validFn((data : {}) : null => {
-      JL.trackActivity('viewProduct', { payload: data });
+      JL.trackActivity('browse_product', { payload: data });
     });
     tracker.addToWishList = validFn((data : {}) : null => {
       JL.trackActivity('addToWishList', { payload: data });
@@ -60,26 +60,6 @@ function addJLFunctionsToSDK(tracker = {}) : null {
 }
 
 const initializeJL = (config = {}) => {
-  const trackTypes = [
-    'view',
-    'viewSection',
-    'viewPromotion',
-    'viewProduct',
-    'addToCart',
-    'setCart',
-    'removeFromCart',
-    'purchase',
-    'search',
-    'browse_section',
-    'addToWishList',
-    'removeFromWishList',
-    'setWishList',
-    'addToFavorites',
-    'setFavoriteList',
-    'removeFromFavorites',
-    'track'
-  ];
-
   const getJetlorePayload = (type : string, options : Object) : Object => {
     const { payload } = options;
     switch (type) {
@@ -103,10 +83,16 @@ const initializeJL = (config = {}) => {
       return {
         text: payload.text
       };
-    case 'view':
+    case 'addToWishList':
+    case 'removeFromWishList':
+    case 'setWishList':
+    case 'addToFavorites':
+    case 'setFavoriteList':
+    case 'removeFromFavorites':
+    case 'browse_product':
       return {
-        deal_id: payload.deal_id,
-        option_id: payload.option_id
+        deal_id: payload.dealId,
+        item_group_id: payload.itemGroupId
       };
     case 'browse_section':
       return {
@@ -118,15 +104,6 @@ const initializeJL = (config = {}) => {
         name: payload.name,
         id: payload.id
       };
-    case 'addToWishList':
-    case 'viewProduct':
-    case 'viewPromotion':
-    case 'viewSection':
-    case 'setWishList':
-    case 'removeFromWishList':
-    case 'addToFavorites':
-    case 'setFavoriteList':
-    case 'removeFromFavorites':
     case 'track':
       return payload;
     default:
@@ -137,19 +114,7 @@ const initializeJL = (config = {}) => {
   JL = {
     trackActivity(type, data) : null {
       try {
-        if (!jlEnabled || !trackTypes.includes(type)) {
-          return null;
-        }
         const jlData = getJetlorePayload(type, data);
-        if (type === 'viewPromotion') {
-          return JL.tracker.browse_promo && JL.tracker.browse_promo(jlData);
-        }
-        if (type === 'viewSection') {
-          return JL.tracker.browse_section && JL.tracker.browse_section(jlData);
-        }
-        if (type === 'viewProduct') {
-          return JL.tracker.browse_product && JL.tracker.browse_product(jlData);
-        }
         if (type === 'setCart') {
           return JL.tracker.setCart && JL.tracker.setCart(data);
         }

@@ -170,6 +170,7 @@ export const installTrackerFunctions = (configHelper : Object, configStore : Obj
   configHelper.removeFromCart = (data : RemoveFromCartData) => {
     try {
       data = removeFromCartNormalizer(data);
+      JL.trackActivity('removeFromCart', data);
       validateRemoveItems(data);
       return trackCartEvent(configHelper.getConfig(), 'removeFromCart', data);
     } catch (err) {
@@ -180,6 +181,7 @@ export const installTrackerFunctions = (configHelper : Object, configStore : Obj
   configHelper.purchase = (data : PurchaseData) => {
     try {
       data = purchaseNormalizer(data);
+      JL.trackActivity('purchase', data);
       validatePurchase(data);
       return trackEvent(configHelper.getConfig(), 'purchase', data);
     } catch (err) {

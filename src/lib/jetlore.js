@@ -62,23 +62,19 @@ function addJLFunctionsToSDK(tracker = {}) : null {
 const initializeJL = (config = {}) => {
   const getJetlorePayload = (type : string, options : Object) : Object => {
     const { payload } = options;
+    const cartItems = options.items || [];
     switch (type) {
     case 'setCart':
       return payload || {};
     case 'addToCart':
     case 'removeFromCart':
-      return {
-        deal_id: payload.deal_id,
-        option_id: payload.option_id,
-        count: payload.count,
-        price: payload.price
-      };
     case 'purchase':
-      return {
-        deal_id: payload.deal_id,
-        option_id: payload.option_id,
-        count: payload.count
-      };
+      return cartItems.map((item => ({
+        deal_id: item.id,
+        item_group_id: item.groupId,
+        count: item.quantity,
+        price: item.price
+      })));
     case 'search':
       return {
         text: payload.text

@@ -6,7 +6,8 @@
 */
 
 import {
-  getUserId
+  getUserId,
+  getValidContainer
 } from './local-storage';
 
 const JL_UTIL = {
@@ -100,10 +101,10 @@ const JL_UTIL = {
 
 /* @flow */
 function Tracker(init_data) {
+  const sysUserId = getUserId() || {};
   const tracker = this;
   tracker.access_token = init_data.cid;
-  const userData = getUserId() || {};
-  tracker.user_id = userData.merchantProvidedUserId || userData.userId;
+  tracker.user_id = sysUserId.merchantProvidedUserId || sysUserId.userId;
   tracker.feed_id = typeof init_data.feed_id === 'undefined' || !init_data.feed_id ? 'any_feed' : init_data.feed_id;
   tracker.div = init_data.div;
   tracker.lang = init_data.lang;
@@ -212,6 +213,12 @@ Tracker.prototype.browse_promo = function browse_promo(data) {
   tracker.performAction(tracker.convertTextData, tracker.a_browse_promo, data);
 };
 
+Tracker.prototype.browse_product = function browse_product(data) {
+  const tracker = this;
+  tracker.log('BrowseProduct action initiated');
+  tracker.performAction(tracker.convertTextData, tracker.a_browse_product, data);
+};
+
 Tracker.prototype.browse_catalog = function browse_catalog(data) {
   const tracker = this;
   tracker.log('BrowseCatalog action initiated');
@@ -245,10 +252,8 @@ Tracker.prototype.page_view = function page_view() {
 Tracker.prototype.performAction = function performAction(convertData, action, data) {
   const tracker = this;
   if (data) {
-    const { merchantProvidedUserId, userId } = getUserId() || {};
-    if (merchantProvidedUserId || userId) {
-      data.id = merchantProvidedUserId || userId;
-    }
+    const sysUserId = getUserId() || {};
+    data.id = sysUserId.merchantProvidedUserId || sysUserId.userId || data.id;
 
     // ignore if data is undefined or null
     if (data.constructor === Array) {
@@ -293,9 +298,26 @@ Tracker.prototype.urlQuery = function urlQuery() : any {
   return query_string;
 };
 
+const extractJLToken = () => {
+  const containerSummary = getValidContainer() || {};
+  const jlAccessToken = containerSummary && containerSummary.jlAccessToken;
+  return jlAccessToken;
+};
+
 Tracker.prototype.action = function takeAction(convertData, action, data) : any {
   let did; // TODO: JL bug because did is undefined. Figure out what this is, and when/how this is used
   const tracker = this;
+
+  const jlAccessToken = extractJLToken();
+  if (jlAccessToken) {
+    tracker.access_token = jlAccessToken;
+  }
+
+  // Access Token may be initialized during initialization
+  if (!tracker.access_token) {
+    return;
+  }
+
   const urlQuery = tracker.urlQuery();
 
   const url_w_user = `${ tracker.api_url  }?action=${  action  }&id=${  tracker.user_id }`;

@@ -21,6 +21,12 @@ import {
 } from './lib/local-storage';
 import { installTrackerFunctions, clearTrackQueue } from './tracker-functions';
 
+let configInfo = {}
+
+export const initializeConfigManager = (config) => {
+  configInfo = {...config}
+}
+
 export const createConfigManager = (config? : Config) : any => {
   const configStore /* (:config) */ = { ...constants.defaultTrackerConfig, ...config };
 

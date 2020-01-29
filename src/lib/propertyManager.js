@@ -2,49 +2,21 @@
 import { getMerchantID } from '@paypal/sdk-client/src';
 
 import type {
-  Config,
   Container,
   ContainerSummary
 } from '../types';
 
-import { getPropertyId, setPropertyId, setContainer, getValidContainer } from './local-storage';
 import { logger } from './logger';
-
 import { storage, oneHour, PP_PROPERTY_URL } from './constants';
 
 const propertyConfig = {
   paramsToPropertyUrl: () => {
-    return PP_PROPERTY_URL
+    return PP_PROPERTY_URL;
   }
-}
+};
 
 let propertyStore = false;
-
-// Called in following places
-//   1. paypal.Tracker( {user...} )
-export const initializeProperty = (config) => {
-  if (typeof config.paramsToPropertyUrl === 'function') {
-    propertyConfig.paramsToPropertyUrl = config.paramsToPropertyUrl
-  }
-  getProperty()
-}
-
-const getProperty = () => {
-  try {
-    propertyStore = JSON.parse(window.localStorage.getItem(storage.paypalCrContainer))
-  } catch(err) {
-    fetchProperty()
-    return null
-  }
-
-  const now = Date.now();
-  if (propertyStore && ((now - propertyStore.createdAt) > oneHour)) {
-    fetchProperty()
-    return propertyStore.id;
-  }
-
-  return propertyStore ? propertyStore.id : null
-}
+let forcedPropertyId = false;
 
 /* Takes the full container and transforms it into
 a format better suited for use by the SDK */
@@ -79,12 +51,12 @@ const emptyContainer : Container = {
 const fetchProperty = async () => {
   const merchantId = getMerchantID()[0];
 
-  let containerSummary = emptyContainer
+  let containerSummary = emptyContainer;
   if (merchantId) {
     const currentLocation = `${ window.location.protocol }//${ window.location.host }`;
     try {
-      const containerResponse = await fetch(`${ propertyConfig.paramsToPropertyUrl() }?mrid=${ merchantId }&url=${ encodeURIComponent(currentLocation) }&jlAccessToken=true`).then(res => res.json())
-      containerSummary = parseContainer(containerResponse)
+      const containerResponse = await fetch(`${ propertyConfig.paramsToPropertyUrl() }?mrid=${ merchantId }&url=${ encodeURIComponent(currentLocation) }&jlAccessToken=true`).then(res => res.json());
+      containerSummary = parseContainer(containerResponse);
     } catch (err) {
       logger.error('fetchProperty', err);
     }
@@ -96,6 +68,61 @@ const fetchProperty = async () => {
   window.localStorage.setItem(storage.paypalSDKIdentity, JSON.stringify(storedValue));
 };
 
+export const getProperty = () => {
+  try {
+    propertyStore = JSON.parse(window.localStorage.getItem(storage.paypalCrContainer));
+  } catch (err) {
+    fetchProperty();
+    return {};
+  }
+
+  if (propertyStore && forcedPropertyId) {
+    propertyStore.id = forcedPropertyId;
+  }
+  const now = Date.now();
+  if (propertyStore && ((now - propertyStore.createdAt) > oneHour)) {
+    fetchProperty();
+    return propertyStore;
+  }
+
+  return propertyStore ? propertyStore : {};
+};
+
+export const setForcedPropertyId = (id) => {
+  forcedPropertyId = id;
+};
+
+export const getPropertyId = () => {
+  try {
+    propertyStore = JSON.parse(window.localStorage.getItem(storage.paypalCrContainer));
+  } catch (err) {
+    fetchProperty();
+    return null;
+  }
+
+  if (propertyStore && forcedPropertyId) {
+    propertyStore.id = forcedPropertyId;
+  }
+
+  const now = Date.now();
+  if (propertyStore && ((now - propertyStore.createdAt) > oneHour)) {
+    fetchProperty();
+    return propertyStore.id;
+  }
+
+  return propertyStore ? propertyStore.id : null;
+};
+
+// Called in following places
+//   1. paypal.Tracker( {user...} )
+export const initializeProperty = (config) => {
+  if (typeof config.paramsToPropertyUrl === 'function') {
+    propertyConfig.paramsToPropertyUrl = config.paramsToPropertyUrl;
+  }
+  getPropertyId();
+};
+
+/*
 export const fetchPropertyId = ({ paramsToPropertyIdUrl, propertyId } : Config) : Promise<string> => {
   const cachedPropertyId = getPropertyId();
 
@@ -149,4 +176,5 @@ export const fetchContainerSettings = ({ paramsToPropertyIdUrl, propertyId } : C
       return '';
     });
 };
+*/
 

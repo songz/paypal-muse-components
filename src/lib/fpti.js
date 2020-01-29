@@ -7,6 +7,7 @@ import type {
   LegacyVariables,
   Config
 } from '../types';
+import { getConfig } from '../config-manager';
 
 import { getDeviceInfo } from './get-device-info';
 import { getIdentity } from './local-storage';
@@ -36,9 +37,10 @@ export const filterFalsyValues = (source : Object) : FptiVariables | LegacyVaria
   return source;
 };
 
-const resolveTrackingData = (config : Config, data : FptiInput) : any => {
+const resolveTrackingData = (data : FptiInput) : any => {
   const deviceInfo = getDeviceInfo();
   const identity = getIdentity() || {};
+  const config = getConfig();
 
   return {
     product: 'ppshopping',
@@ -147,9 +149,9 @@ const resolveTrackingVariables = (data : any) : FptiVariables => ({
   product: data.product
 });
 
-export const trackFpti = (config : Config, data : FptiInput) => {
+export const trackFpti = (data : FptiInput) => {
   const fptiServer = 'https://t.paypal.com/ts';
-  const trackingVariables = resolveTrackingVariables(resolveTrackingData(config, data));
+  const trackingVariables = resolveTrackingVariables(resolveTrackingData(data));
 
   sendBeacon(fptiServer, filterFalsyValues(trackingVariables));
 };

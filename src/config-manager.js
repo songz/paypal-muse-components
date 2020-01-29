@@ -21,11 +21,28 @@ import {
 } from './lib/local-storage';
 import { installTrackerFunctions, clearTrackQueue } from './tracker-functions';
 
-let configInfo = {}
+const encodeData = data => encodeURIComponent(btoa(JSON.stringify(data)));
+
+// paramsToBeaconUrl is a function that gives you the ability to override the beacon url
+// to whatever you want it to be based on the trackingType string and data object.
+// This can be useful for testing purposes, this feature won't be used by merchants.
+let configInfo = {
+  paramsToBeaconUrl: ({ trackingType, data }) => {
+    return `https://www.paypal.com/targeting/track/${ trackingType }?data=${ encodeData(data) }`;
+  }
+};
 
 export const initializeConfigManager = (config) => {
-  configInfo = {...config}
-}
+  configInfo = { ...configInfo, ...config };
+};
+
+export const setConfigCurrency = (currencyCode) => {
+  configInfo.currencyCode = currencyCode;
+};
+
+export const getConfig = () => {
+  return configInfo;
+};
 
 export const createConfigManager = (config? : Config) : any => {
   const configStore /* (:config) */ = { ...constants.defaultTrackerConfig, ...config };

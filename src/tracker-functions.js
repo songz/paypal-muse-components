@@ -6,7 +6,6 @@ import { getClientID, getMerchantID } from '@paypal/sdk-client/src';
 
 import constants from './lib/constants';
 import type {
-  Config,
   CartData,
   EventType,
   RemoveFromCartData,
@@ -28,15 +27,19 @@ import {
   validateCustomEvent,
   setUserNormalizer
 } from './lib/validation';
+import {
+  getOrCreateValidCartId
+} from './lib/local-storage/cart';
 import { logger } from './lib/logger';
 import {
   createNewCartId,
-  setGeneratedUserId,
-  setMerchantProvidedUserId,
-  getCartId,
-  setCartId,
-  getUserId
+  setCartId
 } from './lib/local-storage';
+import {
+  getPropertyId,
+  getProperty,
+  setForcedPropertyId
+} from './lib/propertyManager';
 import {
   analyticsInit,
   merchantUserEvent,
@@ -44,6 +47,8 @@ import {
 } from './lib/legacy-analytics';
 import { trackFpti } from './lib/fpti';
 import { track } from './lib/track';
+import { getUserIds } from './lib/userManager';
+import { setConfigCurrency } from './config-manager';
 
 const getAccessToken = (url : string, mrid : string) : Promise<Object> => {
   return fetch(url, {
@@ -61,15 +66,64 @@ const getAccessToken = (url : string, mrid : string) : Promise<Object> => {
   });
 };
 
+let trackEventQueue = [];
+
+export const trackEvent = (trackingType : EventType, trackingData : any) : void => {
+  // CartId can be set by any event if it is provided
+  if (trackingData.cartId) {
+    setCartId(trackingData.cartId);
+  }
+
+  if (trackingData.currencyCode) {
+    setConfigCurrency(trackingData.currencyCode);
+  }
+
+  // Events cannot be fired without a propertyId. We add events
+  // to a queue if a propertyId has not yet been returned.
+  if (!getPropertyId()) {
+    trackEventQueue.push([ trackingType, trackingData ]);
+    return;
+  }
+
+  const programExists = getProperty().programId;
+
+  switch (trackingType) {
+  case 'view':
+  case 'customEvent':
+    if (programExists) {
+      switch (trackingData.eventName) {
+      case 'analytics-init':
+        analyticsInit();
+        break;
+      case 'analytics-cancel':
+        merchantUserEvent();
+        break;
+      }
+    }
+
+    trackFpti(trackingData);
+    break;
+  case 'purchase':
+    if (programExists) {
+      analyticsPurchase();
+    }
+  default:
+    track(trackingType, trackingData);
+    break;
+  }
+};
+
+const trackCartEvent = (cartEventType : CartEventType, trackingData : CartData | RemoveFromCartData) => {
+  trackEvent('cartEvent', { ...trackingData, cartEventType });
+};
+
 export const trackerFunctions = {
-  viewPage: () => {
-  },
   addToCart: (data : CartData) => {
     try {
       data = addToCartNormalizer(data);
       JL.trackActivity('addToCart', data);
       validateAddItems(data);
-      return trackCartEvent(configHelper.getConfig(), 'addToCart', data);
+      return trackCartEvent('addToCart', data);
     } catch (err) {
       logger.error('addToCart', err);
     }
@@ -79,7 +133,7 @@ export const trackerFunctions = {
       data = setCartNormalizer(data);
       JL.trackActivity('setCart', data);
       validateAddItems(data);
-      return trackCartEvent(configHelper.getConfig(), 'setCart', data);
+      return trackCartEvent('setCart', data);
     } catch (err) {
       logger.error('setCart', err);
     }
@@ -89,7 +143,7 @@ export const trackerFunctions = {
       data = removeFromCartNormalizer(data);
       JL.trackActivity('removeFromCart', data);
       validateRemoveItems(data);
-      return trackCartEvent(configHelper.getConfig(), 'removeFromCart', data);
+      return trackCartEvent('removeFromCart', data);
     } catch (err) {
       logger.error('removeFromCart', err);
     }
@@ -99,14 +153,14 @@ export const trackerFunctions = {
       data = purchaseNormalizer(data);
       JL.trackActivity('purchase', data);
       validatePurchase(data);
-      return trackEvent(configHelper.getConfig(), 'purchase', data);
+      return trackEvent('purchase', data);
     } catch (err) {
       logger.error('purchase', err);
     }
   },
   setCartId: (cartId : string) => setCartId(cartId),
   cancelCart: () => {
-    const event = trackEvent(configHelper.getConfig(), 'cancelCart', {});
+    const event = trackEvent('cancelCart', {});
     // a new id can only be created AFTER the 'cancel' event has been fired
     createNewCartId();
     return event;
@@ -118,7 +172,7 @@ export const trackerFunctions = {
       validateUser(data);
     } catch (err) {
       logger.error('setUser', err);
-      return;
+      
     }
     /*
     if (merchantProvidedUserId !== undefined || userEmail || userName) {
@@ -127,7 +181,7 @@ export const trackerFunctions = {
     */
   },
   setPropertyId: (id : string) => {
-    configStore.propertyId = id;
+    setForcedPropertyId(id);
   },
 
   getIdentity: (data : IdentityData, url? : string = accessTokenUrl) : Promise<Object> => {
@@ -174,7 +228,7 @@ export const trackerFunctions = {
         fptiInput.eventData = data;
       }
 
-      trackEvent(configHelper.getConfig(), 'customEvent', fptiInput);
+      trackEvent('customEvent', fptiInput);
     } catch (err) {
       logger.error('customEvent', err);
     }
@@ -182,21 +236,20 @@ export const trackerFunctions = {
 
   viewPage: () => {
     // $FlowFixMe
-    const merchantProvidedUserId = getUserId().merchantProvidedUserId;
-    // $FlowFixMe
-    const shopperId = getUserId().userId;
-    // $FlowFixMe
-    const cartId = getCartId().cartId;
+    const { merchantProvidedUserId, shopperId, ppId } = getUserIds();
+
+    const cartId = getOrCreateValidCartId();
 
     const data : FptiInput = {
       eventName: 'pageView',
       eventType: 'view',
       shopperId,
       merchantProvidedUserId,
+      encryptedAccountNumber: ppId,
       cartId
     };
 
-    trackEvent(configHelper.getConfig(), 'view', data);
+    trackEvent('view', data);
   },
 
   track: (type : string, data : Object) => {
@@ -248,69 +301,17 @@ export const trackerFunctions = {
       logger.error('identity', err);
     });
   }
-}
-
-let trackEventQueue = [];
-
-export const trackEvent = (config : Config, trackingType : EventType, trackingData : any) : void => {
-  // CartId can be set by any event if it is provided
-  if (trackingData.cartId) {
-    setCartId(trackingData.cartId);
-  }
-
-  if (trackingData.currencyCode) {
-    config.currencyCode = trackingData.currencyCode;
-  }
-
-  // Events cannot be fired without a propertyId. We add events
-  // to a queue if a propertyId has not yet been returned.
-  if (!config.propertyId) {
-    trackEventQueue.push([ trackingType, trackingData ]);
-    return;
-  }
-
-  const programExists = config.containerSummary && config.containerSummary.programId;
-
-  switch (trackingType) {
-  case 'view':
-  case 'customEvent':
-    if (programExists) {
-      switch (trackingData.eventName) {
-      case 'analytics-init':
-        analyticsInit(config);
-        break;
-      case 'analytics-cancel':
-        merchantUserEvent(config);
-        break;
-      }
-    }
-
-    trackFpti(config, trackingData);
-    break;
-  case 'purchase':
-    if (programExists) {
-      analyticsPurchase(config);
-    }
-  default:
-    track(config, trackingType, trackingData);
-    break;
-  }
 };
 
-export const clearTrackQueue = (config : Config) => {
+export const clearTrackQueue = () => {
   trackEventQueue.forEach(([ trackingType, trackingData ]) => {
-    trackEvent(config, trackingType, trackingData);
+    trackEvent(trackingType, trackingData);
   });
   trackEventQueue = [];
 };
 
-const trackCartEvent = (config : Config, cartEventType : CartEventType, trackingData : CartData | RemoveFromCartData) => {
-  trackEvent(config, 'cartEvent', { ...trackingData, cartEventType });
-};
-
-export const installTrackerFunctions = (configHelper : Object, configStore : Object, JL : Object) => {
+export const installTrackerFunctions = (configHelper : Object, configStore : Object) => {
   configHelper.getConfig = () => {
     return configStore;
   };
-
 };

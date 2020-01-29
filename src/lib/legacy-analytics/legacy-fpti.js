@@ -1,7 +1,7 @@
 /* @flow */
 import { getMerchantID } from '@paypal/sdk-client/src';
 
-import type { Config, LegacyVariables } from '../../types';
+import type { LegacyVariables } from '../../types';
 import { sendBeacon, filterFalsyValues } from '../fpti';
 import {
   getPageTitle,
@@ -9,9 +9,16 @@ import {
   getWindowLocation,
   getDeviceInfo
 } from '../get-device-info';
+import {
+  getConfig
+} from '../../config-manager';
+import {
+  getProperty
+} from '../propertyManager';
 
-const resolveTrackingData = (config, data) => {
-  const programId = config.containerSummary && config.containerSummary.programId;
+const resolveTrackingData = (data) => {
+  const programId = getProperty().programId;
+  const config = getConfig();
 
   const deviceInfo = getDeviceInfo();
   const completeUrl = getWindowLocation();
@@ -141,9 +148,9 @@ const resolveTrackingVariables = (data) : LegacyVariables => ({
   completeurl: data.completeUrl
 });
 
-export const legacyFpti = (config : Config, data : any) => {
+export const legacyFpti = (data : any) => {
   const fptiServer = 'https://t.paypal.com/ts';
-  const trackingVariables = resolveTrackingVariables(resolveTrackingData(config, data));
+  const trackingVariables = resolveTrackingVariables(resolveTrackingData(data));
 
   sendBeacon(fptiServer, filterFalsyValues(trackingVariables));
 };

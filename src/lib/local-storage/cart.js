@@ -1,10 +1,10 @@
 /* @flow */
-import constants from '../constants';
 import generate from '../generate-id';
-
-const { storage, sevenDays } = constants;
+import { storage, sevenDays } from '../constants';
 
 /* Returns an existing cartId or null */
+// Should not be public
+// TODO: remove export
 export const getCartId = () => {
   const storedValue = window.localStorage.getItem(storage.paypalCrCart);
 
@@ -24,7 +24,7 @@ export const setCartId = (cartId : string) => {
 
   window.localStorage.setItem(storage.paypalCrCart, JSON.stringify(storedValue));
 
-  return storedValue;
+  return cartId;
 };
 
 /* Generates a random cartId that expires in 7 days */
@@ -43,5 +43,5 @@ export const getOrCreateValidCartId = () => {
     return createNewCartId();
   }
 
-  return storedValue;
+  return storedValue.cartId;
 };

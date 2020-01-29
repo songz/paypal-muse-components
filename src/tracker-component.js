@@ -3,17 +3,14 @@ import type {
   Config
 } from './types';
 import {
-  createConfigManager,
   initializeConfigManager
 } from './config-manager';
 import {
-  setUserStore,
   initializeUserConfig
-} from './userManager';
+} from './lib/userManager';
 import {
   initializeProperty
-} from './userManager';
-
+} from './lib/propertyManager';
 import { trackerFunctions } from './tracker-functions';
 
 // $FlowFixMe
@@ -31,18 +28,20 @@ export const Tracker = (config? : Config = {}) => {
 
     The difference in behavior is intended.
   */
-  initializeUserConfig(config)
-  initializeProperty(config)
-  initializeConfigManager(config)
+  initializeUserConfig(config);
+  initializeProperty(config);
+  initializeConfigManager(config);
 
+  /*
   const configManager = createConfigManager(config);
   configManager.setupConfigUser();
   configManager.checkDebugMode();
   configManager.setupUserAndCart();
+  */
 
-  let trackers = {...trackerFunctions}
+  const trackers = { ...trackerFunctions };
     
-    /*
+  /*
   const trackers = {
     getConfig: configManager.getConfig,
     viewPage: configManager.viewPage,

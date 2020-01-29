@@ -29,6 +29,7 @@ export const createConfigManager = (config? : Config) : any => {
   const JL = getJetlore(configStore);
   installTrackerFunctions(configHelper, configStore, JL);
 
+  // Todo: Delete
   configHelper.setupConfigUser = () => {
     /*
       Bit of a tricky thing here. We allow the merchant to pass

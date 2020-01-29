@@ -5,6 +5,7 @@ import { setIdentity, getIdentity } from '../local-storage';
 import { getDeviceInfo } from '../get-device-info';
 import { logger } from '../logger';
 
+// TODO: Delete
 export const setupUserIdentity = () => {
   /* Do not fetch if identity data
     has recently be cached. */

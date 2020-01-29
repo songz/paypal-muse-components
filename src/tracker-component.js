@@ -5,6 +5,10 @@ import type {
 import {
   createConfigManager
 } from './config-manager';
+import {
+  setUserStore,
+  initializeUserConfig
+} from './userManager';
 
 // $FlowFixMe
 export const Tracker = (config? : Config = {}) => {
@@ -21,6 +25,7 @@ export const Tracker = (config? : Config = {}) => {
 
     The difference in behavior is intended.
   */
+  initializeUserConfig(config)
 
   const configManager = createConfigManager(config);
   configManager.setupConfigUser();

@@ -19,5 +19,8 @@ export default {
       'name': '',
       'merchantProvidedUserId': ''
     }
-  }
+  },
 };
+
+export const PP_PROD_URL = "https://www.paypal.com"
+export const PP_SB_URL = "https://www.sandbox.paypal.com"

@@ -23,4 +23,4 @@ export default {
 };
 
 export const PP_PROD_URL = "https://www.paypal.com"
-export const PP_SB_URL = "https://www.sandbox.paypal.com"
+export const PP_PROPERTY_URL = 'https://www.paypal.com/tagmanager/containers/xo"

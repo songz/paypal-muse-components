@@ -9,6 +9,9 @@ import {
   setUserStore,
   initializeUserConfig
 } from './userManager';
+import {
+  initializeProperty
+} from './userManager';
 
 // $FlowFixMe
 export const Tracker = (config? : Config = {}) => {
@@ -26,6 +29,7 @@ export const Tracker = (config? : Config = {}) => {
     The difference in behavior is intended.
   */
   initializeUserConfig(config)
+  initializeProperty(config)
 
   const configManager = createConfigManager(config);
   configManager.setupConfigUser();

@@ -1,4 +1,3 @@
-// Constants
 import get from 'lodash/get';
 import { getDeviceInfo } from './get-device-info';
 import generate from './generate-id';
@@ -38,7 +37,7 @@ export const setUserStore = (config) => {
 //   1. paypal.Tracker( {user...} )
 export const initializeUserConfig = (config) => {
   if (typeof config.paramsToIdentityUrl === 'function') {
-    userConfig.paramsToIdentityUrl = paramsToIdentityUrl
+    userConfig.paramsToIdentityUrl = config.paramsToIdentityUrl
   }
   if (config.user) {
     setUserStore(config.user)
@@ -75,13 +74,6 @@ const getIdentity = () => {
 //   2. When paypalSDKIdentity data is old
 //   fetchPPUser will always set paypalSDKIdentity localStorage
 const fetchPPUser = () => {
-  /* Do not fetch if identity data
-    has recently be cached. */
-  const cachedIdentity = getIdentity();
-  if (cachedIdentity) {
-    return;
-  }
-
   const iframe = document.createElement('iframe');
   iframe.style.display = 'none';
   iframe.setAttribute('src', 'https://www.paypalobjects.com/ppshopping/9ac/964d282/9ac/964d282b/index.html');

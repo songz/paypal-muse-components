@@ -112,7 +112,7 @@ const trackCartEvent = (cartEventType : CartEventType, trackingData : CartData |
 export const trackerFunctions = {
   addToCart: (data : CartData) => {
     JL.trackActivity('addToCartCart', data);
-    return trackCartEvent('addToCart', data)
+    return trackCartEvent('addToCart', data);
   },
   removeFromCart: (data : RemoveFromCartData) => {
     JL.trackActivity('removeFromCart', data);
@@ -140,7 +140,7 @@ export const trackerFunctions = {
   setUser: (data : { user : UserData } | UserData) => {
     try {
       const userData = setUserNormalizer(data);
-      setUserStore({user: userData});
+      setUserStore({ user: userData });
     } catch (err) {
       logger.error('setUser', err);
       
@@ -192,7 +192,7 @@ export const trackerFunctions = {
     // JL.trackActivity(type, data);
     if (typeof trackerFunctions[type] === 'function' && type !== 'track') {
       try {
-        trackerFunctions[type](data)
+        trackerFunctions[type](data);
       } catch (err) {
         logger.error('deprecated_track', err);
       }

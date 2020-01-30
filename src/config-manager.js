@@ -6,7 +6,7 @@ import { getCurrency } from '@paypal/sdk-client/src';
 
 import { fetchContainerSettings } from './lib/get-property-id';
 import constants from './lib/constants';
-import getJetlore, {initializeJetlore} from './lib/jetlore';
+import getJetlore, { initializeJetlore } from './lib/jetlore';
 import { setupUserIdentity } from './lib/iframe-tools/identity-manager';
 import type {
   Config
@@ -43,7 +43,7 @@ export const initializeConfigManager = (config) => {
   if (config.paramsToTokenUrl && typeof config.paramsToTokenUrl === 'function') {
     newConfig.paramsToTokenUrl = config.paramsToTokenUrl;
   }
-  initializeJetlore(config)
+  initializeJetlore(config);
 };
 
 export const setConfigCurrency = (currencyCode) => {

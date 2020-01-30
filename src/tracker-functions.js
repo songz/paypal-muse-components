@@ -111,9 +111,11 @@ const trackCartEvent = (cartEventType : CartEventType, trackingData : CartData |
 
 export const trackerFunctions = {
   addToCart: (data : CartData) => {
+    JL.trackActivity('addToCartCart', data);
     return trackCartEvent('addToCart', data)
   },
   removeFromCart: (data : RemoveFromCartData) => {
+    JL.trackActivity('removeFromCart', data);
     return trackCartEvent('removeFromCart', data);
   },
   setCart: (data : CartData) => {

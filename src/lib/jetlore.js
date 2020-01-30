@@ -6,64 +6,11 @@ import type {
 import { logger } from './logger';
 import Tracker from './jetloreTracker';
 
-let JL;
 let jlEnabled = false;
 
-const validFn = (fn) => {
-  return (...args) => {
-    if (!jlEnabled || !JL || !JL.trackActivity || (typeof JL.trackActivity !== 'function')) {
-      return;
-    }
-    fn(...args);
-  };
-};
-
-function addJLFunctionsToSDK(tracker = {}) : null {
-  // This will add JL specific functions to trackers object
-  //   This function will have a side effect, which is necessary.
-  //   Since tracking SDK don't support these functions, they should
-  //   be handled directly by JL instead of going through trackers (more error prone)
-  try {
-    tracker.search = validFn((data : {}) : null => {
-      JL.trackActivity('search', { payload: data });
-    });
-    tracker.viewSection = validFn((data : {}) : null => {
-      JL.trackActivity('browse_section', { payload: data });
-    });
-    tracker.viewPromo = validFn((data : {}) : null => {
-      JL.trackActivity('browse_promo', { payload: data });
-    });
-    tracker.viewProduct = validFn((data : {}) : null => {
-      JL.trackActivity('browse_product', { payload: data });
-    });
-    tracker.addToWishList = validFn((data : {}) : null => {
-      JL.trackActivity('addToWishList', { payload: data });
-    });
-    tracker.removeFromWishList = validFn((data : {}) : null => {
-      JL.trackActivity('removeFromWishList', { payload: data });
-    });
-    tracker.setWishList = validFn((data : {}) : null => {
-      JL.trackActivity('setWishList', { payload: data });
-    });
-    tracker.addToFavorites = validFn((data : {}) : null => {
-      JL.trackActivity('addToFavorites', { payload: data });
-    });
-    tracker.removeFromFavorites = validFn((data : {}) : null => {
-      JL.trackActivity('removeFromFavorites', { payload: data });
-    });
-    tracker.setFavoriteList = validFn((data : {}) : null => {
-      JL.trackActivity('setFavoriteList', { payload: data });
-    });
-  } catch (err) {
-    logger.error('JL.addJLFunctionsToSDK', err);
-  }
-}
-
-const initializeJL = (config = {}) => {
-  const getJetlorePayload = (type : string, options : Object) : Object => {
-    const { payload } = options;
-    const cartItems = options.items || [];
-    switch (type) {
+const getJetlorePayload = (type : string, payload : Object) : Object => {
+  const cartItems = payload.items || [];
+  switch (type) {
     case 'setCart':
       return payload || {};
     case 'addToCart':
@@ -87,8 +34,8 @@ const initializeJL = (config = {}) => {
     case 'removeFromFavorites':
     case 'browse_product':
       return {
-        deal_id: payload.dealId,
-        item_group_id: payload.itemGroupId
+        deal_id: payload.id,
+        item_group_id: payload.groupId
       };
     case 'browse_section':
       return {
@@ -104,24 +51,58 @@ const initializeJL = (config = {}) => {
       return payload;
     default:
       return {};
-    }
-  };
+  }
+};
 
-  JL = {
-    trackActivity(type, data) : null {
-      try {
-        const jlData = getJetlorePayload(type, data);
-        if (type === 'setCart') {
-          return JL.tracker.setCart && JL.tracker.setCart(data);
-        }
-        JL.tracker[type] && JL.tracker[type](jlData);
-        return null;
-      } catch (err) {
-        logger.error('JL.trackActivity', err);
+const JL = {
+  trackActivity(type, data) : null {
+    try {
+      const jlData = getJetlorePayload(type, data);
+      if (type === 'setCart') {
+        return JL.tracker.setCart && JL.tracker.setCart(data);
       }
-    },
-    addJLFunctionsToSDK
-  };
+      JL.tracker[type] && JL.tracker[type](jlData);
+      return null;
+    } catch (err) {
+      logger.error('JL.trackActivity', err);
+    }
+  }
+};
+
+export const jlFunctions = {
+  search: (data : {}) : null => {
+    JL.trackActivity('search', data);
+  },
+  viewSection: (data : {}) : null => {
+    JL.trackActivity('browse_section', data);
+  },
+  viewPromo: (data : {}) : null => {
+    JL.trackActivity('browse_promo', data);
+  },
+  viewProduct: (data : {}) : null => {
+    JL.trackActivity('browse_product', data);
+  },
+  addToWishList: (data : {}) : null => {
+    JL.trackActivity('addToWishList', data);
+  },
+  removeFromWishList: (data : {}) : null => {
+    JL.trackActivity('removeFromWishList', data);
+  },
+  setWishList: (data : {}) : null => {
+    JL.trackActivity('setWishList', data);
+  },
+  addToFavorites: (data : {}) : null => {
+    JL.trackActivity('addToFavorites', data);
+  },
+  removeFromFavorites: (data : {}) : null => {
+    JL.trackActivity('removeFromFavorites', data);
+  },
+  setFavoriteList: (data : {}) : null => {
+    JL.trackActivity('setFavoriteList', data);
+  }
+}
+
+const initializeJL = (config = {}) => {
 
   const jetloreConfig = config.jetlore || config || {};
   if (jetloreConfig) {
@@ -150,27 +131,27 @@ const initializeJL = (config = {}) => {
   return JL;
 };
 
-// This function should never throw an error,
-// no matter what the circumstances are
-const getJetlore = (config = {}) => {
-  if (JL) {
-    return JL;
+export const initializeJetlore = (config) => {
+  const jetloreConfig = config.jetlore || config || {};
+  if (!jetloreConfig) return
+  const {
+    access_token,
+    feed_id,
+    feedId,
+    div,
+    lang
+  } = jetloreConfig;
+  const trackingConfig : JetloreConfig = {
+    cid: access_token,
+    feed_id: feed_id || feedId
+  };
+  if (div) {
+    trackingConfig.div = div;
   }
-
-  try {
-    JL = initializeJL(config);
-    return JL;
-  } catch (err) {
-    logger.error('initializeJL', err);
-    JL = {
-      trackActivity() : null {
-        return null;
-      },
-      tracker: {},
-      addJLFunctionsToSDK
-    };
-    return JL;
+  if (lang) {
+    trackingConfig.lang = lang;
   }
-};
+  JL.tracker = new Tracker(trackingConfig);
+}
 
-export default getJetlore;
+export default JL;

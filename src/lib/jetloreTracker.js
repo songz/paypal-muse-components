@@ -320,6 +320,9 @@ Tracker.prototype.action = function takeAction(convertData, action, data) : any 
     return;
   }
 
+  const sysUserId = getUserIds() || {};
+  tracker.user_id = sysUserId.merchantProvidedUserId || sysUserId.ppId || sysUserId.shopperId;
+
   const urlQuery = tracker.urlQuery();
 
   const url_w_user = `${ tracker.api_url  }?action=${  action  }&id=${  tracker.user_id }`;

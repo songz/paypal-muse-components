@@ -1,7 +1,5 @@
 /* @flow */
-import constants from '../constants';
-
-const { storage } = constants;
+import { storage } from '../constants';
 
 export const getPropertyId = () : Object | null => {
   const storedValue = window.localStorage.getItem(storage.paypalCrPropertyId);

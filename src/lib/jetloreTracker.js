@@ -251,11 +251,15 @@ Tracker.prototype.page_view = function page_view() {
   tracker.performAction(tracker.convertTextData, tracker.a_page_view, []);
 };
 
+const getUserId = () => {
+  const sysUserId = getUserIds() || {};
+  return sysUserId.merchantProvidedUserId || sysUserId.ppId || sysUserId.shopperId;
+};
+
 Tracker.prototype.performAction = function performAction(convertData, action, data) {
   const tracker = this;
   if (data) {
-    const sysUserId = getUserIds() || {};
-    data.id = sysUserId.merchantProvidedUserId || sysUserId.ppId || sysUserId.shopperId;
+    data.id = getUserId();
 
     // ignore if data is undefined or null
     if (data.constructor === Array) {
@@ -311,17 +315,11 @@ Tracker.prototype.action = function takeAction(convertData, action, data) : any 
   const tracker = this;
 
   const jlAccessToken = extractJLToken();
-  if (jlAccessToken) {
-    tracker.access_token = jlAccessToken;
-  }
-
-  // Access Token may be initialized during initialization
-  if (!tracker.access_token) {
+  if (!jlAccessToken) {
     return;
   }
-
-  const sysUserId = getUserIds() || {};
-  tracker.user_id = sysUserId.merchantProvidedUserId || sysUserId.ppId || sysUserId.shopperId;
+  tracker.access_token = jlAccessToken;
+  tracker.user_id = getUserId();
 
   const urlQuery = tracker.urlQuery();
 

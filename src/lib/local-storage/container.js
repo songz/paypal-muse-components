@@ -1,8 +1,6 @@
 /* @flow */
-import constants from '../constants';
+import { storage, oneHour } from '../constants';
 import type { ContainerSummary } from '../../types';
-
-const { storage, oneHour } = constants;
 
 const getContainer = () : Object | null => {
   const storedValue = window.localStorage.getItem(storage.paypalCrContainer);

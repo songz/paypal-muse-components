@@ -4,9 +4,7 @@ import {
   getIdentity,
   setIdentity
 } from '../../src/lib/local-storage';
-import constants from '../../src/lib/constants';
-
-const { storage, oneHour } = constants;
+import { storage, oneHour } from '../../src/lib/constants';
 
 /* Mock post message response */
 const mockIdentityResponse = {

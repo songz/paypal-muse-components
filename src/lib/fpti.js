@@ -4,8 +4,7 @@ import { getClientID, getMerchantID, getPartnerAttributionID } from '@paypal/sdk
 import type {
   FptiInput,
   FptiVariables,
-  LegacyVariables,
-  Config
+  LegacyVariables
 } from '../types';
 import { getConfig } from '../config-manager';
 

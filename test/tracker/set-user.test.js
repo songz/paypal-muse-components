@@ -4,7 +4,7 @@ import { Tracker } from '../../src/tracker-component';
 import { fetchPropertyId } from '../../src/lib/get-property-id';
 import { getUserId } from '../../src/lib/local-storage';
 import { track } from '../../src/lib/track';
-import constants from '../../src/lib/constants';
+import { storage, defaultTrackerConfig } from '../../src/lib/constants';
 import { mockContainerSummary1 } from '../mocks';
 
 jest.mock('../../src/lib/track');
@@ -16,8 +16,6 @@ jest.mock('../../src/lib/get-property-id', () => {
 });
 
 describe('setUser', () => {
-  const { defaultTrackerConfig, storage } = constants;
-
   let config;
   let mockItem;
 

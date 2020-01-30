@@ -1,9 +1,7 @@
 /* @flow */
 /* global jest afterAll expect */
 import { track } from '../../src/lib/track';
-import constants from '../../src/lib/constants';
-
-const { storage } = constants;
+import { storage } from '../../src/lib/constants';
 
 describe('track', () => {
   const mockCreateElement = jest.spyOn(document, 'createElement');

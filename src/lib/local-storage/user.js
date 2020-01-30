@@ -1,11 +1,9 @@
 /* @flow */
-import constants from '../constants';
+import { storage } from '../constants';
 import generate from '../generate-id';
 import { logger } from '../logger';
 
 import { getIdentity } from './identity';
-
-const { storage } = constants;
 
 export const getUserStorage = () => {
   let userStorage = window.localStorage.getItem(storage.paypalCrUser) || '{}';

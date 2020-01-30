@@ -1,7 +1,5 @@
 /* @flow */
-import constants from '../constants';
-
-const { storage, oneHour } = constants;
+import { storage, oneHour } from '../constants';
 
 export const clearIdentity = () => {
   window.localStorage.removeItem(storage.paypalSDKIdentity);

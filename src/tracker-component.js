@@ -12,7 +12,7 @@ import {
   initializeProperty
 } from './lib/propertyManager';
 import { trackerFunctions } from './tracker-functions';
-import { jlFunctions } from './lib/jetlore';
+import { jlFunctions, initializeJetlore } from './lib/jetlore';
 
 // $FlowFixMe
 export const Tracker = (config? : Config = {}) => {
@@ -32,6 +32,7 @@ export const Tracker = (config? : Config = {}) => {
   initializeUserConfig(config);
   initializeProperty(config);
   initializeConfigManager(config);
+  initializeJetlore(config);
 
   /*
   const configManager = createConfigManager(config);

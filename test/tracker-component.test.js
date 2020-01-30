@@ -3,12 +3,10 @@
 import { Tracker } from '../src/tracker-component';
 import { logger } from '../src/lib/logger';
 import getJetlore from '../src/lib/jetlore';
-import constants from '../src/lib/constants';
+import { sevenDays, storage } from '../src/lib/constants';
 // $FlowFixMe
 import generateIdModule from '../src/lib/generate-id';
 import { getUserId, getCartId } from '../src/lib/local-storage';
-
-const { sevenDays, storage } = constants;
 
 const sampleItem = {
   title: 'sultan of cairo',

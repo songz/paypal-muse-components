@@ -1,17 +1,17 @@
 /* @flow */
 export default {
   'oneMonth': 1000 * 60 * 60 * 24 * 30,
-  'cartLimit': 10,
-  'defaultTrackerConfig': {
-    'user': {
-      'id': '',
-      'email': '',
-      'name': '',
-      'merchantProvidedUserId': ''
-    }
-  }
+  'cartLimit': 10
 };
 
+export const defaultTrackerConfig = {
+  'user': {
+    'id': '',
+    'email': '',
+    'name': '',
+    'merchantProvidedUserId': ''
+  }
+};
 export const accessTokenUrl = 'https://www.paypal.com/muse/api/partner-token';
 export const PP_PROD_URL = 'https://www.paypal.com';
 export const PP_PROPERTY_URL = 'https://www.paypal.com/tagmanager/containers/xo';

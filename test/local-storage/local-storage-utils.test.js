@@ -1,14 +1,12 @@
 /* globals expect */
 /* @flow */
-import constants from '../../src/lib/constants';
+import { storage } from '../../src/lib/constants';
 import {
   createNewCartId,
   getCartId,
   setCartId,
   getOrCreateValidCartId
 } from '../../src/lib/local-storage';
-
-const { storage } = constants;
 
 describe('local-storage-utils', () => {
   describe('createNewCartId', () => {

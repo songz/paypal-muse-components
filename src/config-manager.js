@@ -5,8 +5,7 @@ import _ from 'lodash';
 import { getCurrency } from '@paypal/sdk-client/src';
 
 import { fetchContainerSettings } from './lib/get-property-id';
-import constants from './lib/constants';
-import getJetlore, { initializeJetlore } from './lib/jetlore';
+import { defaultTrackerConfig } from './lib/constants';
 import { setupUserIdentity } from './lib/iframe-tools/identity-manager';
 import type {
   Config
@@ -19,7 +18,6 @@ import {
   getOrCreateValidUserId,
   setMerchantProvidedUserId
 } from './lib/local-storage';
-import { installTrackerFunctions, clearTrackQueue } from './tracker-functions';
 
 const encodeData = data => encodeURIComponent(btoa(JSON.stringify(data)));
 
@@ -43,7 +41,6 @@ export const initializeConfigManager = (config) => {
   if (config.paramsToTokenUrl && typeof config.paramsToTokenUrl === 'function') {
     newConfig.paramsToTokenUrl = config.paramsToTokenUrl;
   }
-  initializeJetlore(config);
 };
 
 export const setConfigCurrency = (currencyCode) => {
@@ -55,12 +52,9 @@ export const getConfig = () => {
 };
 
 export const createConfigManager = (config? : Config) : any => {
-  const configStore /* (:config) */ = { ...constants.defaultTrackerConfig, ...config };
+  const configStore /* (:config) */ = { ...defaultTrackerConfig, ...config };
 
   const configHelper = {};
-
-  const JL = getJetlore(configStore);
-  installTrackerFunctions(configHelper, configStore, JL);
 
   // Todo: Delete
   configHelper.setupConfigUser = () => {
@@ -76,10 +70,6 @@ export const createConfigManager = (config? : Config) : any => {
       configStore.user.merchantProvidedUserId = merchantUserId;
       delete configStore.user.id;
     }
-  };
-
-  configHelper.setupJL = (tracker : Object) => {
-    JL.addJLFunctionsToSDK(tracker);
   };
 
   configHelper.checkDebugMode = () => {
@@ -126,7 +116,6 @@ export const createConfigManager = (config? : Config) : any => {
 
       configStore.containerSummary = containerSummary;
 
-      clearTrackQueue(configStore);
     });
   };
 

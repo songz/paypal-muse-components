@@ -101,36 +101,23 @@ export const trackEvent = (trackingType : EventType, trackingData : any) : void 
 };
 
 const trackCartEvent = (cartEventType : CartEventType, trackingData : CartData | RemoveFromCartData) => {
-  trackEvent('cartEvent', { ...trackingData, cartEventType });
+  try {
+    const data = cartEventNormalizer(trackingData);
+    trackEvent('cartEvent', { ...data, cartEventType });
+  } catch (err) {
+    logger.error(cartEventType, err);
+  }
 };
 
 export const trackerFunctions = {
   addToCart: (data : CartData) => {
-    try {
-      data = cartEventNormalizer(data);
-      JL.trackActivity('addToCart', data);
-      return trackCartEvent('addToCart', data);
-    } catch (err) {
-      logger.error('addToCart', err);
-    }
+    return trackCartEvent('addToCart', data)
   },
   removeFromCart: (data : RemoveFromCartData) => {
-    try {
-      data = cartEventNormalizer(data);
-      JL.trackActivity('removeFromCart', data);
-      return trackCartEvent('removeFromCart', data);
-    } catch (err) {
-      logger.error('removeFromCart', err);
-    }
+    return trackCartEvent('removeFromCart', data);
   },
   setCart: (data : CartData) => {
-    try {
-      data = cartEventNormalizer(data);
-      JL.trackActivity('setCart', data);
-      return trackCartEvent('setCart', data);
-    } catch (err) {
-      logger.error('setCart', err);
-    }
+    return trackCartEvent('setCart', data);
   },
   purchase: (data : PurchaseData) => {
     try {
@@ -148,20 +135,14 @@ export const trackerFunctions = {
     createNewCartId();
     return event;
   },
-
   setUser: (data : { user : UserData } | UserData) => {
     try {
-      data = setUserNormalizer(data);
-      setUserStore(data);
+      const userData = setUserNormalizer(data);
+      setUserStore({user: userData});
     } catch (err) {
       logger.error('setUser', err);
       
     }
-    /*
-    if (merchantProvidedUserId !== undefined || userEmail || userName) {
-      trackEvent(configHelper.getConfig(), 'setUser', { prevMerchantProvidedUserId });
-    }
-    */
   },
   setPropertyId: (id : string) => {
     setForcedPropertyId(id);
@@ -207,9 +188,9 @@ export const trackerFunctions = {
     // To future developers. This is only for supporting an undocumented
     // Tracker.track function call.
     // JL.trackActivity(type, data);
-    if (typeof trackEvent[type] === 'function') {
+    if (typeof trackerFunctions[type] === 'function' && type !== 'track') {
       try {
-        trackEvent[type](data);
+        trackerFunctions[type](data)
       } catch (err) {
         logger.error('deprecated_track', err);
       }

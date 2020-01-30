@@ -6,9 +6,11 @@
 */
 
 import {
-  getUserId,
-  getValidContainer
-} from './local-storage';
+  getProperty
+} from './propertyManager';
+import {
+  getUserIds
+} from './userManager';
 
 const JL_UTIL = {
   _traverseObject(obj, func) {
@@ -101,10 +103,10 @@ const JL_UTIL = {
 
 /* @flow */
 function Tracker(init_data) {
-  const sysUserId = getUserId() || {};
+  const sysUserId = getUserIds() || {};
   const tracker = this;
   tracker.access_token = init_data.cid;
-  tracker.user_id = sysUserId.merchantProvidedUserId || sysUserId.userId;
+  tracker.user_id = sysUserId.merchantProvidedUserId || sysUserId.ppId;
   tracker.feed_id = typeof init_data.feed_id === 'undefined' || !init_data.feed_id ? 'any_feed' : init_data.feed_id;
   tracker.div = init_data.div;
   tracker.lang = init_data.lang;
@@ -252,8 +254,8 @@ Tracker.prototype.page_view = function page_view() {
 Tracker.prototype.performAction = function performAction(convertData, action, data) {
   const tracker = this;
   if (data) {
-    const sysUserId = getUserId() || {};
-    data.id = sysUserId.merchantProvidedUserId || sysUserId.userId || data.id;
+    const sysUserId = getUserIds() || {};
+    data.id = sysUserId.merchantProvidedUserId || sysUserId.ppId || sysUserId.shopperId;
 
     // ignore if data is undefined or null
     if (data.constructor === Array) {
@@ -299,7 +301,7 @@ Tracker.prototype.urlQuery = function urlQuery() : any {
 };
 
 const extractJLToken = () => {
-  const containerSummary = getValidContainer() || {};
+  const containerSummary = getProperty() || {};
   const jlAccessToken = containerSummary && containerSummary.jlAccessToken;
   return jlAccessToken;
 };

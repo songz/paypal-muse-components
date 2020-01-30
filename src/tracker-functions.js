@@ -1,10 +1,9 @@
 /* @flow */
 import 'whatwg-fetch'; // eslint-disable-line import/no-unassigned-import
 
-import _ from 'lodash';
 import { getClientID, getMerchantID } from '@paypal/sdk-client/src';
 
-import constants from './lib/constants';
+import { accessTokenUrl } from './lib/constants';
 import type {
   CartData,
   EventType,
@@ -16,15 +15,7 @@ import type {
   UserData
 } from './types';
 import {
-  validateRemoveItems,
-  addToCartNormalizer,
-  setCartNormalizer,
-  removeFromCartNormalizer,
-  purchaseNormalizer,
-  validateAddItems,
-  validatePurchase,
-  validateUser,
-  validateCustomEvent,
+  cartEventNormalizer,
   setUserNormalizer
 } from './lib/validation';
 import {
@@ -47,26 +38,22 @@ import {
 } from './lib/legacy-analytics';
 import { trackFpti } from './lib/fpti';
 import { track } from './lib/track';
-import { getUserIds } from './lib/userManager';
-import { setConfigCurrency } from './config-manager';
+import { getUserIds, setUserStore } from './lib/userManager';
+import { setConfigCurrency, getConfig } from './config-manager';
+import JL from './lib/jetlore';
 
-const getAccessToken = (url : string, mrid : string) : Promise<Object> => {
+let trackEventQueue = [];
+
+const sendTokenRequest = (url, body) => {
   return fetch(url, {
     method: 'POST',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      mrid,
-      clientId: getClientID()
-    })
-  }).then(r => r.json()).then(data => {
-    return data;
-  });
+    body
+  }).then(r => r.json());
 };
-
-let trackEventQueue = [];
 
 export const trackEvent = (trackingType : EventType, trackingData : any) : void => {
   // CartId can be set by any event if it is provided
@@ -120,39 +107,35 @@ const trackCartEvent = (cartEventType : CartEventType, trackingData : CartData |
 export const trackerFunctions = {
   addToCart: (data : CartData) => {
     try {
-      data = addToCartNormalizer(data);
+      data = cartEventNormalizer(data);
       JL.trackActivity('addToCart', data);
-      validateAddItems(data);
       return trackCartEvent('addToCart', data);
     } catch (err) {
       logger.error('addToCart', err);
     }
   },
-  setCart: (data : CartData) => {
-    try {
-      data = setCartNormalizer(data);
-      JL.trackActivity('setCart', data);
-      validateAddItems(data);
-      return trackCartEvent('setCart', data);
-    } catch (err) {
-      logger.error('setCart', err);
-    }
-  },
   removeFromCart: (data : RemoveFromCartData) => {
     try {
-      data = removeFromCartNormalizer(data);
+      data = cartEventNormalizer(data);
       JL.trackActivity('removeFromCart', data);
-      validateRemoveItems(data);
       return trackCartEvent('removeFromCart', data);
     } catch (err) {
       logger.error('removeFromCart', err);
     }
   },
+  setCart: (data : CartData) => {
+    try {
+      data = cartEventNormalizer(data);
+      JL.trackActivity('setCart', data);
+      return trackCartEvent('setCart', data);
+    } catch (err) {
+      logger.error('setCart', err);
+    }
+  },
   purchase: (data : PurchaseData) => {
     try {
-      data = purchaseNormalizer(data);
+      data = cartEventNormalizer(data);
       JL.trackActivity('purchase', data);
-      validatePurchase(data);
       return trackEvent('purchase', data);
     } catch (err) {
       logger.error('purchase', err);
@@ -169,7 +152,7 @@ export const trackerFunctions = {
   setUser: (data : { user : UserData } | UserData) => {
     try {
       data = setUserNormalizer(data);
-      validateUser(data);
+      setUserStore(data);
     } catch (err) {
       logger.error('setUser', err);
       
@@ -184,40 +167,8 @@ export const trackerFunctions = {
     setForcedPropertyId(id);
   },
 
-  getIdentity: (data : IdentityData, url? : string = accessTokenUrl) : Promise<Object> => {
-    const {
-      accessTokenUrl
-    } = constants;
-    return getAccessToken(url, data.mrid).then(accessToken => {
-      if (accessToken.data) {
-        if (data.onIdentification) {
-          data.onIdentification({ getAccessToken: () => accessToken.data });
-        }
-      } else {
-        if (data.onError) {
-          data.onError({
-            message: 'No token could be created',
-            error: accessToken
-          });
-        }
-      }
-      return accessToken;
-
-    }).catch(err => {
-      if (data.onError) {
-        data.onError({
-          message: 'No token could be created',
-          error: err
-        });
-      }
-
-      return {};
-    });
-  },
-
   customEvent: (eventName : string, data? : Object) => {
     try {
-      validateCustomEvent(eventName, data);
 
       const fptiInput : FptiInput = {
         eventName,
@@ -255,39 +206,49 @@ export const trackerFunctions = {
   track: (type : string, data : Object) => {
     // To future developers. This is only for supporting an undocumented
     // Tracker.track function call.
-    JL.trackActivity(type, data);
-    if (typeof configHelper[type] === 'function') {
+    // JL.trackActivity(type, data);
+    if (typeof trackEvent[type] === 'function') {
       try {
-        configHelper[type](data);
+        trackEvent[type](data);
       } catch (err) {
         logger.error('deprecated_track', err);
       }
     }
   },
 
-  getUserAccessToken: (cb? : function) => {
-    const getUrl = _.get(configStore, 'paramsToTokenUrl');
-    let url = 'https://paypal.com/muse/api/partner-token';
-    if (typeof getUrl === 'function') {
-      url = getUrl();
+  getIdentity: (data : IdentityData, url? : string = accessTokenUrl) : Promise<Object> => {
+    let errHandler = () => {};
+    if (data.onError && typeof data.onError === 'function') {
+      errHandler = data.onError;
     }
-
-    return window.fetch(url, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        merchantId: getMerchantID()[0],
-        clientId: getClientID()
-      })
-    }).then(res => {
-      if (res.status !== 200) {
-        return false;
+    return sendTokenRequest(url, JSON.stringify({
+      mrid: data.mrid,
+      clientId: getClientID()
+    })).then(accessToken => {
+      if (accessToken.data && data.onIdentification && typeof data.onIdentification === 'function') {
+        data.onIdentification({ getAccessToken: () => accessToken.data });
+      } else {
+        errHandler({
+          message: 'No token could be created',
+          error: accessToken
+        });
       }
-      return res.json();
-    }).then(data => {
+      return accessToken;
+    }).catch(err => {
+      errHandler({
+        message: 'No token could be created',
+        error: err
+      });
+      return {};
+    });
+  },
+
+  getUserAccessToken: (cb? : function) => {
+    const url = getConfig().paramsToTokenUrl();
+    return sendTokenRequest(url, JSON.stringify({
+      merchantId: getMerchantID()[0],
+      clientId: getClientID()
+    })).then(data => {
       if (!data) {
         const failurePayload = { success: false };
         return cb ? cb(failurePayload) : failurePayload;

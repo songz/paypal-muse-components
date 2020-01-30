@@ -6,8 +6,5 @@ export { validateRemoveItems } from './validate-remove-items';
 export { validateCustomEvent } from './validate-custom-event';
 export {
   setUserNormalizer,
-  addToCartNormalizer,
-  purchaseNormalizer,
-  setCartNormalizer,
-  removeFromCartNormalizer
+  cartEventNormalizer
 } from './legacy-input-normalizers';
